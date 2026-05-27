@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bonus A: Streamlit chat UI for the Bitext data analyst agent."""
+"""Streamlit chat UI for the Bitext data analyst agent."""
 
 from __future__ import annotations
 
@@ -65,7 +65,7 @@ def _render_reasoning(steps: list[ReasoningStep]) -> None:
 def main() -> None:
     st.set_page_config(page_title="Bitext Analyst", page_icon="💬", layout="wide")
     st.title("Bitext Customer Support Analyst")
-    st.caption("Assignment 3 — Streamlit UI (Bonus A) with query recommender (Bonus B)")
+    st.caption("Streamlit UI with query recommender")
 
     if not os.environ.get("NEBIUS_API_KEY"):
         st.error("Set NEBIUS_API_KEY in `.env` before running the app.")
@@ -89,7 +89,7 @@ def main() -> None:
             st.rerun()
 
         st.divider()
-        st.markdown("**Try Bonus B:** ask *What should I query next?*")
+        st.markdown("**Try:** ask *What should I query next?*")
 
     if "chat_messages" not in st.session_state:
         st.session_state["chat_messages"] = []

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-# Nebius Token Factory (same endpoint as Assignment 1)
+# Nebius Token Factory endpoint
 NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/"
 # Chosen after trying smaller models; 70B balances cost vs tool-calling quality.
 MODEL_NAME = "meta-llama/Llama-3.3-70B-Instruct"

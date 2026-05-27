@@ -57,7 +57,7 @@ def run_interactive(session_id: str, user_id: str) -> None:
     with get_checkpointer() as checkpointer:
         graph = build_graph(checkpointer=checkpointer)
         print("Bitext Data Analyst Agent")
-        print("Ask about the dataset. Bonus B: try 'What should I query next?'")
+        print("Ask about the dataset. Try 'What should I query next?' for suggestions.")
         print("Type 'quit' to exit.\n")
 
         while True:

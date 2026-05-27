@@ -1,4 +1,4 @@
-"""Bonus B: suggest follow-up queries without running them until the user confirms."""
+"""Suggest follow-up queries without running them until the user confirms."""
 
 from __future__ import annotations
 

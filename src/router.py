@@ -97,7 +97,7 @@ def router_node(state: AgentState) -> dict:
     if is_profile_question(user_text):
         return {
             "query_type": "profile",
-            "route_reason": "User asked about saved profile (Task 2b).",
+            "route_reason": "User asked about their saved profile.",
         }
 
     response = get_llm(max_tokens=150).invoke(

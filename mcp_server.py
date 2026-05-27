@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""FastMCP server exposing Bitext dataset analyst tools (Task 3)."""
+"""FastMCP server exposing Bitext dataset analyst tools."""
 
 from __future__ import annotations
 

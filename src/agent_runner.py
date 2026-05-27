@@ -1,4 +1,4 @@
-"""Shared turn execution for CLI and Streamlit (graph + Bonus B recommender)."""
+"""Shared turn execution for CLI and Streamlit."""
 
 from __future__ import annotations
 
@@ -80,7 +80,7 @@ def run_turn(
     rec = recommender or RecommenderState()
     history_messages = history_messages or []
 
-    # Bonus B: execute pending suggestion after confirmation
+    # Execute pending suggestion after confirmation
     if rec.awaiting_confirmation and rec.pending_query:
         if is_confirmation(user_input):
             user_input = rec.pending_query
@@ -101,7 +101,7 @@ def run_turn(
                 skip_profile_update=True,
             )
 
-    # Bonus B: new recommendation request — do not run the graph yet
+    # New recommendation request — suggest but don't run yet
     if is_recommendation_request(user_input):
         suggested = suggest_query(
             history_messages,
