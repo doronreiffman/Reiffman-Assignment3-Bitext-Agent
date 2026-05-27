@@ -76,11 +76,13 @@ def main() -> None:
 
     with st.sidebar:
         st.header("Session")
-        session_id = st.text_input("Session ID", value=st.session_state.get("session_id", "default"))
-        user_id = st.text_input("User ID (profile)", value=st.session_state.get("user_id", session_id))
+        session_id = st.text_input("Session ID", value=st.session_state.get("session_id", "default"),
+                                   help="Conversation thread — same ID resumes the same chat history.")
+        user_id = st.text_input("User ID (profile)", value=st.session_state.get("user_id", session_id),
+                                help="Controls which user profile is loaded. Multiple sessions can share one profile.")
         st.session_state["session_id"] = session_id
         st.session_state["user_id"] = user_id
-        st.caption(f"Dataset: {row_count:,} rows · checkpoints persist per Session ID")
+        st.caption(f"Dataset: {row_count:,} rows")
         if st.button("Clear chat display"):
             st.session_state["chat_messages"] = []
             st.session_state["recommender"] = RecommenderState()

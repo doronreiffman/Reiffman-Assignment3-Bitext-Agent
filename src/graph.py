@@ -108,9 +108,9 @@ def route_after_router(state: AgentState) -> str:
         return "decline"
     if state.get("query_type") == "profile":
         return "profile"
-    for msg in reversed(state["messages"]):
-        if isinstance(msg, HumanMessage) and is_profile_question(msg.content):
-            return "profile"
+    latest = _latest_user_message(state)
+    if latest and is_profile_question(latest):
+        return "profile"
     return "agent"
 
 
