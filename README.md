@@ -53,7 +53,7 @@ Distilled facts (name, interests) live in `data/profiles/<user>.json`, separate 
 
 **`meta-llama/Llama-3.3-70B-Instruct`** via [Nebius Token Factory](https://api.tokenfactory.nebius.com/v1/).
 
-We use the same model for routing and the ReAct agent. We tried smaller models on the platform (e.g. Gemma 3 27B), but tool calling and answer quality were worse. Llama 3.3 70B is described as optimized for chat quality, and in our tests it picked tools reliably—important for multi-step queries like filter → count. It felt like the right balance between cost and performance for this assignment.
+Same model for both routing and the ReAct agent. We tried smaller models (Gemma 3 27B) but tool-calling was unreliable — the model would skip filter steps or hallucinate tool names. Llama 3.3 70B handled multi-step chains (filter → count) correctly and is a good cost/quality tradeoff.
 
 ## Architecture
 

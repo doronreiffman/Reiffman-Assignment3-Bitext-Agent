@@ -45,19 +45,19 @@ _PROFILE_PATTERNS = (
 
 
 def is_profile_question(text: str) -> bool:
-    """True when the user asks about the saved profile (Task 2b)."""
+    """Check if the user is asking about their saved profile."""
     normalized = " ".join(text.lower().split())
     return any(re.search(pattern, normalized) for pattern in _PROFILE_PATTERNS)
 
 
-def get_llm() -> ChatOpenAI:
+def get_llm(max_tokens: int = 1024) -> ChatOpenAI:
     """Create the Nebius-backed chat model."""
     return ChatOpenAI(
         model=MODEL_NAME,
         base_url=NEBIUS_BASE_URL,
         api_key=os.environ["NEBIUS_API_KEY"],
         temperature=0,
-        max_tokens=150,
+        max_tokens=max_tokens,
     )
 
 
@@ -100,7 +100,7 @@ def router_node(state: AgentState) -> dict:
             "route_reason": "User asked about saved profile (Task 2b).",
         }
 
-    response = get_llm().invoke(
+    response = get_llm(max_tokens=150).invoke(
         [
             SystemMessage(content=ROUTER_SYSTEM),
             HumanMessage(content=user_text),

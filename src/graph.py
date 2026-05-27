@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
@@ -9,7 +11,6 @@ from langgraph.prebuilt import ToolNode
 
 from src.config import MAX_ITERATIONS
 from src.dataset_context import get_working_row_ids, reset_working, sync_row_ids_from_state
-from src.follow_up import is_follow_up_question
 from src.router import get_llm, is_profile_question, router_node
 from src.state import AgentState, QueryType
 from src.tools.dataset_tools import get_all_tools
@@ -52,15 +53,14 @@ FALLBACK_MESSAGE = (
 
 
 def decline_node(state: AgentState) -> dict:
-    """Politely decline out-of-scope queries without using tools or general knowledge."""
-    _ = state
+    """Politely decline out-of-scope queries."""
     return {
         "messages": [AIMessage(content=DECLINE_MESSAGE)],
     }
 
 
 def profile_node(state: AgentState, config: RunnableConfig) -> dict:
-    """Answer from the saved user profile (Task 2b), without tools or general knowledge."""
+    """Answer from the saved user profile."""
     user_id = config.get("configurable", {}).get("user_id", "default")
     profile = load_profile(user_id)
     if not profile or profile == EMPTY_PROFILE:
@@ -126,7 +126,6 @@ def route_after_agent(state: AgentState) -> str:
 
 def limit_node(state: AgentState) -> dict:
     """Return graceful fallback when max iterations exceeded."""
-    _ = state
     return {"messages": [AIMessage(content=FALLBACK_MESSAGE)]}
 
 
@@ -145,10 +144,29 @@ def _latest_user_message(state: AgentState) -> str:
     return ""
 
 
+_FOLLOW_UP_PATTERNS = (
+    r"\bshow me \d+ more\b",
+    r"\b\d+ more\b",
+    r"\bmore examples\b",
+    r"\bwhat about\b",
+    r"\bhow about\b",
+    r"\band the total\b",
+    r"\btotal count of the last\b",
+    r"\bthe last two\b",
+    r"\bsame (?:category|intent|filter)\b",
+    r"\bthose (?:rows|examples)\b",
+)
+
+
+def _is_follow_up(text: str) -> bool:
+    normalized = " ".join(text.lower().split())
+    return any(re.search(p, normalized) for p in _FOLLOW_UP_PATTERNS)
+
+
 def prepare_turn(state: AgentState) -> dict:
     """Restore filter context for follow-ups; clear stale filters on new questions."""
     user_text = _latest_user_message(state)
-    if is_follow_up_question(user_text):
+    if _is_follow_up(user_text):
         sync_row_ids_from_state(state.get("working_row_ids"))
     else:
         reset_working()

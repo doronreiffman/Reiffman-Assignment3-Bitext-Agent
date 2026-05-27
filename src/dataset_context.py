@@ -42,6 +42,13 @@ def current_df() -> pd.DataFrame:
     return _FULL_DF
 
 
+def full_df() -> pd.DataFrame:
+    """Return the full (unfiltered) dataset."""
+    if _FULL_DF is None:
+        raise RuntimeError("Dataset not loaded.")
+    return _FULL_DF
+
+
 def sync_row_ids_from_state(working_row_ids: list[int] | None) -> None:
     """Restore tool context from checkpointed graph state."""
     global _WORKING_ROW_IDS

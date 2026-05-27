@@ -30,9 +30,10 @@ mcp = FastMCP(
 
 
 def _ensure_dataset_loaded() -> None:
-    from src.dataset_context import _FULL_DF
-
-    if _FULL_DF is None:
+    try:
+        from src.dataset_context import full_df
+        full_df()
+    except RuntimeError:
         set_full_dataset(load_bitext_dataframe())
 
 

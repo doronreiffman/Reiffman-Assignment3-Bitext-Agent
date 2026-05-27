@@ -6,7 +6,7 @@ import json
 
 from langchain_core.tools import tool
 
-from src.dataset_context import current_df, reset_working, set_working_from_df
+from src.dataset_context import current_df, full_df, reset_working, set_working_from_df
 from src.tools.schemas import (
     FilterByCategoryInput,
     FilterByIntentInput,
@@ -25,15 +25,8 @@ def _normalize_intent(intent: str) -> str:
 
 @tool(args_schema=ListIntentsInput)
 def list_intents(category: str | None = None) -> str:
-    """List intent names in the dataset, optionally filtered by category.
-
-    Use when the user asks what intents exist, or before filter_by_intent when
-    you need the exact intent string (e.g. get_refund vs track_refund).
-    Do not use for counting rows — use count_rows after filtering.
-    """
-    from src.dataset_context import _FULL_DF
-
-    base = _FULL_DF
+    """List all intent names in the dataset, optionally filtered to one category."""
+    base = full_df()
     if category:
         cat = _normalize_category(category)
         base = base[base["category"] == cat]
@@ -45,23 +38,14 @@ def list_intents(category: str | None = None) -> str:
 
 @tool
 def list_categories() -> str:
-    """List all high-level category names in the dataset (e.g. ACCOUNT, REFUND, SHIPPING).
-
-    Use when the user asks what categories exist. Do not use for intent lists or counts.
-    """
-    from src.dataset_context import _FULL_DF
-
-    categories = sorted(_FULL_DF["category"].unique().tolist())
+    """List all category names in the dataset (e.g. ACCOUNT, REFUND, SHIPPING)."""
+    categories = sorted(full_df()["category"].unique().tolist())
     return json.dumps(categories)
 
 
 @tool(args_schema=FilterByCategoryInput)
 def filter_by_category(category: str) -> str:
-    """Restrict the working view to one category. Required before sampling/counting within a category.
-
-    Call before count_rows, sample_examples, or intent_distribution when the question
-    mentions a category (e.g. SHIPPING, ACCOUNT). Use list_categories if unsure of exact names.
-    """
+    """Filter the working view to rows matching a category (e.g. SHIPPING, ACCOUNT)."""
     cat = _normalize_category(category)
     filtered = current_df()
     filtered = filtered[filtered["category"] == cat]
@@ -73,12 +57,7 @@ def filter_by_category(category: str) -> str:
 
 @tool(args_schema=FilterByIntentInput)
 def filter_by_intent(intent: str) -> str:
-    """Restrict the working view to one intent (e.g. get_refund, complaint, delivery_options).
-
-    Use for questions about a specific intent. Chain with count_rows for 'how many' questions.
-    Call list_intents if unsure of the exact intent string.
-    Filters the current view (or full dataset if none). If you get 0 rows unexpectedly, call reset_filters and try again.
-    """
+    """Filter the working view to rows with a specific intent (e.g. get_refund, complaint)."""
     intent_norm = _normalize_intent(intent)
     filtered = current_df()
     filtered = filtered[filtered["intent"] == intent_norm]
@@ -90,33 +69,20 @@ def filter_by_intent(intent: str) -> str:
 
 @tool
 def reset_filters() -> str:
-    """Clear all filters and reset the working view to the full dataset.
-
-    Use when a previous filter was wrong or you need to start a new analysis from scratch.
-    """
-    from src.dataset_context import _FULL_DF
-
+    """Clear all filters and reset the working view to the full dataset."""
     reset_working()
-    return f"Filters reset. Full dataset has {len(_FULL_DF)} rows."
+    return f"Filters reset. Full dataset has {len(full_df())} rows."
 
 
 @tool
 def count_rows() -> str:
-    """Return the number of rows in the current filtered view.
-
-    Use after filter_by_category or filter_by_intent when the user asks 'how many'.
-    If no filter was applied yet, counts the entire dataset.
-    """
+    """Return the number of rows in the current filtered view."""
     return str(len(current_df()))
 
 
 @tool(args_schema=SampleExamplesInput)
 def sample_examples(n: int = 3) -> str:
-    """Return random customer instruction/response pairs from the current filtered view.
-
-    Use when the user wants examples or when you need text to summarize (unstructured questions).
-    Apply filters first so examples match the requested category or intent.
-    """
+    """Return n random instruction/response examples from the current filtered view."""
     df = current_df()
     if df.empty:
         return "No rows in the current view. Apply a filter or reset_filters."
@@ -136,10 +102,7 @@ def sample_examples(n: int = 3) -> str:
 
 @tool
 def intent_distribution() -> str:
-    """Return counts of each intent in the current filtered view.
-
-    Use after filter_by_category when the user asks for intent distribution within a category.
-    """
+    """Return counts of each intent in the current filtered view."""
     df = current_df()
     if df.empty:
         return "No rows in the current view."
