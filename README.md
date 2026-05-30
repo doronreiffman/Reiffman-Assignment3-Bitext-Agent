@@ -91,7 +91,7 @@ Multi-step example: `filter_by_intent("get_refund")` → `count_rows()`.
 
 ## MCP server (Task 3)
 
-Expose dataset tools via [FastMCP](https://gofastmcp.com/) for MCP clients (Cursor, Claude Desktop, etc.).
+Expose dataset tools via [FastMCP](https://gofastmcp.com/) for any MCP client (Claude Desktop, Cursor, Claude Code, etc.).
 
 ### Start the server
 
@@ -111,9 +111,9 @@ The server uses **stdio** transport (default): the client spawns this process an
 
 Stateful filters work within one MCP session: call `filter_by_intent` then `count_rows` (same as the CLI agent).
 
-### Connect from Cursor
+### Connect from an MCP client
 
-Add to your Cursor MCP settings (`.cursor/mcp.json` or Settings → MCP):
+Most MCP clients share the same `mcpServers` config block — add this server to your client's MCP configuration:
 
 ```json
 {
@@ -126,11 +126,16 @@ Add to your Cursor MCP settings (`.cursor/mcp.json` or Settings → MCP):
 }
 ```
 
-Replace paths with your machine’s paths.
+Replace paths with your machine’s paths, then restart/reload the client so it picks up the server. Where this config lives depends on the client:
+
+- **Claude Desktop** — `claude_desktop_config.json` (Settings → Developer → Edit Config)
+- **Cursor** — `.cursor/mcp.json` or Settings → MCP
+- **Claude Code** — `claude mcp add …` or a project `.mcp.json`
+- **Other clients** (Windsurf, etc.) — see the client's MCP docs for where its config lives
 
 ### Example: call one tool
 
-In Cursor chat (with the MCP server enabled), ask the model to use the `list_categories` tool.
+In your MCP client's chat (with the server enabled), ask the model to use the `list_categories` tool.
 
 Or test from the terminal:
 
