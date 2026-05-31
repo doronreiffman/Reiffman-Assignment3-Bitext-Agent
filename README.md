@@ -2,19 +2,39 @@
 
 Assignment 3 — LangGraph ReAct agent over the [Bitext customer support dataset](https://huggingface.co/datasets/bitext/Bitext-customer-support-llm-chatbot-training-dataset). Tasks 1–3 plus bonuses (Streamlit UI, query recommender) are implemented.
 
+## Prerequisites
+
+- **Python 3.10 or newer** (the code uses `X | None` type syntax from PEP 604). Check with `python3 --version`.
+- A **Nebius Token Factory** API key — see [Model](#model) for where to get one.
+- **Internet access on first run** to download the dataset (no Hugging Face account or token required — the dataset is public).
+
 ## Setup (under 5 minutes)
 
+All commands below run from the **repository root** — the folder that contains `main.py` (not a `bitext-agent/` subfolder).
+
 ```bash
-cd bitext-agent
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+# 1. Get the code (skip if you already have it). The folder is named after the repo.
+git clone https://github.com/doronreiffman/Reiffman-Assignment3-Bitext-Agent.git
+cd Reiffman-Assignment3-Bitext-Agent   # or: cd <whatever you named the clone>
+
+# 2. Create and activate a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate               # Windows: .venv\Scripts\activate
+
+# 3. Install dependencies
 pip install -r requirements.txt
+
+# 4. Add your API key
 cp .env.example .env
-# Edit .env and set NEBIUS_API_KEY
+# Open .env and set NEBIUS_API_KEY=...
+
+# 5. Run
 python main.py
 ```
 
-First run downloads ~27k rows from Hugging Face and caches them under `data/bitext.parquet`.
+> On Windows, or if `python3` isn't found, use `python` instead. After the venv is activated, `python` already points at the right interpreter.
+
+First run downloads ~27k rows from Hugging Face and caches them under `data/bitext.parquet`; later runs load from that cache.
 
 ## CLI
 
@@ -52,6 +72,8 @@ Distilled facts (name, interests) live in `data/profiles/<user>.json`, separate 
 ## Model
 
 **`meta-llama/Llama-3.3-70B-Instruct`** via [Nebius Token Factory](https://api.tokenfactory.nebius.com/v1/).
+
+Create an API key in the Nebius Token Factory console and set it in `.env` as `NEBIUS_API_KEY` (see [Setup](#setup-under-5-minutes)).
 
 Same model for both routing and the ReAct agent. We tried smaller models (Gemma 3 27B) but tool-calling was unreliable — the model would skip filter steps or hallucinate tool names. Llama 3.3 70B handled multi-step chains (filter → count) correctly and is a good cost/quality tradeoff.
 
@@ -119,14 +141,14 @@ Most MCP clients share the same `mcpServers` config block — add this server to
 {
   "mcpServers": {
     "bitext-analyst": {
-      "command": "/absolute/path/to/bitext-agent/.venv/bin/python",
-      "args": ["/absolute/path/to/bitext-agent/mcp_server.py"]
+      "command": "/absolute/path/to/repo/.venv/bin/python",
+      "args": ["/absolute/path/to/repo/mcp_server.py"]
     }
   }
 }
 ```
 
-Replace paths with your machine’s paths, then restart/reload the client so it picks up the server. Where this config lives depends on the client:
+Replace `/absolute/path/to/repo` with the absolute path to your repository root (run `pwd` there to get it; on Windows use `.venv\Scripts\python.exe`), then restart/reload the client so it picks up the server. Where this config lives depends on the client:
 
 - **Claude Desktop** — `claude_desktop_config.json` (Settings → Developer → Edit Config)
 - **Cursor** — `.cursor/mcp.json` or Settings → MCP
