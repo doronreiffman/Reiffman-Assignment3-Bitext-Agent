@@ -94,7 +94,7 @@ flowchart TD
 2. **ReAct agent** — Nebius LLM with tools; max **12** agent steps, then a fallback message.
 3. **Tools** — composable filters and queries over the dataset.
 
-**Filter state:** `filter_by_*` tools narrow a working view (row IDs in `working_row_ids`, checkpointed per session) so multi-step chains and follow-ups like “show me 3 more” keep the same filter.
+**Filter state:** `filter_by_*` tools narrow a working view (row IDs in `working_row_ids`) so multi-step chains within a turn (`filter → count`) share the same filter. Filter state is **turn-scoped** — it resets at the start of each turn. For follow-ups like “show me 3 more” or “what about refunds?”, the agent re-applies the relevant filter from the conversation history (preserved by the checkpointer); this keeps switching topics from intersecting a stale filter down to zero rows.
 
 ## Tools
 

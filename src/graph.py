@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import re
-
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
@@ -23,7 +21,7 @@ Rules:
 - For "how many" questions: call filter_by_intent (or filter_by_category) FIRST, then count_rows.
 - Call only ONE tool at a time, wait for the result, then decide the next step.
 - When done, give a short direct answer to the user (include the number).
-- Follow-up questions ("show me 3 more", "what about refunds?") refer to earlier turns in this session.
+- Each turn starts with NO active filter. Follow-ups ("show me 3 more", "what about refunds?") refer to earlier turns, so re-apply the relevant filter (filter_by_intent/filter_by_category) before counting or sampling.
 
 Intent names are lowercase with underscores (e.g. get_refund, track_refund, complaint).
 Categories are uppercase (e.g. REFUND, ACCOUNT, SHIPPING).
@@ -37,7 +35,7 @@ UNSTRUCTURED_SYSTEM = """You are a data analyst for the Bitext customer support 
 The user wants a summary or qualitative analysis. Use tools to fetch representative data:
 filter to the relevant category or intent, then sample_examples (use n=10–15 for summaries).
 Base your answer only on tool results — do not invent examples.
-Follow-up questions refer to earlier turns in this session.
+Each turn starts with no active filter; for follow-ups, re-apply the relevant filter (from earlier turns) before sampling.
 If the user asks what you remember about them, answer from the user profile below."""
 
 DECLINE_MESSAGE = (
@@ -144,40 +142,17 @@ def _latest_user_message(state: AgentState) -> str:
     return ""
 
 
-# Phrases that REUSE the current filtered view — i.e. do more with the SAME rows.
-# Topic-switch phrases like "what about X" / "how about X" are deliberately NOT
-# listed here: they ask for a DIFFERENT slice, so the previous filter must be
-# cleared and re-applied against the full dataset. Keeping it would intersect two
-# mutually exclusive intents (e.g. complaint ∩ get_refund) down to zero rows.
-# Conversational context is preserved by the checkpointer's chat history either
-# way, so resetting the row-id filter on a topic switch is safe.
-_FILTER_REUSE_PATTERNS = (
-    r"\bshow me \d+ more\b",
-    r"\b\d+ more\b",
-    r"\bmore examples\b",
-    r"\band the total\b",
-    r"\btotal count of the last\b",
-    r"\bthe last two\b",
-    r"\bsame (?:category|intent|filter)\b",
-    r"\bthose (?:rows|examples)\b",
-)
-
-
-def _reuses_filter(text: str) -> bool:
-    """True when the message refines the SAME filtered view (e.g. 'show me 3 more')."""
-    normalized = " ".join(text.lower().split())
-    return any(re.search(p, normalized) for p in _FILTER_REUSE_PATTERNS)
-
-
 def prepare_turn(state: AgentState) -> dict:
-    """Keep the filter for reuse follow-ups; reset it for new questions and topic switches."""
-    user_text = _latest_user_message(state)
-    if _reuses_filter(user_text):
-        sync_row_ids_from_state(state.get("working_row_ids"))
-    else:
-        reset_working()
-        return {"iteration_count": 0, "working_row_ids": None}
-    return {"iteration_count": 0}
+    """Start every turn with a clean filter.
+
+    Filter state is turn-scoped: we reset the working view here and let the agent
+    re-apply whatever filter is relevant from the conversation history (which the
+    checkpointer preserves). This avoids guessing filter carry-over from the user's
+    phrasing, and guarantees a topic switch ("what about refunds?") can never
+    intersect a stale filter from the previous turn and collapse to zero rows.
+    """
+    reset_working()
+    return {"iteration_count": 0, "working_row_ids": None}
 
 
 def build_graph(checkpointer=None):
