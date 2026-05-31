@@ -144,12 +144,17 @@ def _latest_user_message(state: AgentState) -> str:
     return ""
 
 
-_FOLLOW_UP_PATTERNS = (
+# Phrases that REUSE the current filtered view — i.e. do more with the SAME rows.
+# Topic-switch phrases like "what about X" / "how about X" are deliberately NOT
+# listed here: they ask for a DIFFERENT slice, so the previous filter must be
+# cleared and re-applied against the full dataset. Keeping it would intersect two
+# mutually exclusive intents (e.g. complaint ∩ get_refund) down to zero rows.
+# Conversational context is preserved by the checkpointer's chat history either
+# way, so resetting the row-id filter on a topic switch is safe.
+_FILTER_REUSE_PATTERNS = (
     r"\bshow me \d+ more\b",
     r"\b\d+ more\b",
     r"\bmore examples\b",
-    r"\bwhat about\b",
-    r"\bhow about\b",
     r"\band the total\b",
     r"\btotal count of the last\b",
     r"\bthe last two\b",
@@ -158,15 +163,16 @@ _FOLLOW_UP_PATTERNS = (
 )
 
 
-def _is_follow_up(text: str) -> bool:
+def _reuses_filter(text: str) -> bool:
+    """True when the message refines the SAME filtered view (e.g. 'show me 3 more')."""
     normalized = " ".join(text.lower().split())
-    return any(re.search(p, normalized) for p in _FOLLOW_UP_PATTERNS)
+    return any(re.search(p, normalized) for p in _FILTER_REUSE_PATTERNS)
 
 
 def prepare_turn(state: AgentState) -> dict:
-    """Restore filter context for follow-ups; clear stale filters on new questions."""
+    """Keep the filter for reuse follow-ups; reset it for new questions and topic switches."""
     user_text = _latest_user_message(state)
-    if _is_follow_up(user_text):
+    if _reuses_filter(user_text):
         sync_row_ids_from_state(state.get("working_row_ids"))
     else:
         reset_working()
